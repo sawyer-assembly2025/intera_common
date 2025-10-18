@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+
+<!-- Main header to define URDF name and if xacro files will be used-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="rethink_pneumatic_gripper">
+<!-- Macro name defined inside macro file, so it can be called from a different URDF file -->
+<!-- side, always "right" for Sawyer, if gazebo simulation to be used set to "true", if ft_sensor needed set to "true", option to change slot position from "1" to "10" --> 
+<xacro:macro name="rethink_pneumatic_gripper" params="side gazebo use_ftsensor slot_position">
+
+<!-- Lenght Properties of each element in End of Arm Tooling -->
+<!-- #ToDo Update distances in meters for pneumatic gripper -->
+	
+    <xacro:property name="end_of_arm_offset" value="-0.005" scope="local"/>
+    <xacro:property name="connector_plate_length" value="0.0151" scope="local"/>
+    <xacro:property name="pneumatic_gripper_base_length" value="0.04552" scope="local"/>
+    <xacro:property name="ft_sensor_lenght" value="0.0001" scope="local"/>
+    <xacro:property name="ft_gripper_adapter_lenght" value="0.0001" scope="local"/>
+    <xacro:property name="finger_length" value="0.0021" scope="local"/>
+
+<!-- Start Kinematic Chain -->
+<!-- Structure is ordered as a tree: link, joint, link, to observe geometrical relationships between each of them-->
+
+    <!-- Base of whole end effector - (Connector Plate + F/T Sensor + Adapter + Pneumatic Gripper + Fingers + Tips) -->
+    <!-- #ToDo Update Mass and origin? is it the CoM? -->
+    <link name="${side}_gripper_base">
+      <inertial>
+        <!-- Sum Gripper Mass - for whole end effector, measured from end of plastic cuff -->
+        <mass value="0.47"/>
+        <origin rpy="0 0 0" xyz="0.0028 -0.0004 0.0343"/>
+        <inertia ixx="1e-08" ixy="0" ixz="0" iyy="1e-08" iyz="0" izz="1e-08"/>
+      </inertial>
+    </link>
+
+     <!-- Connector Plate Joint -->
+     <joint name="${side}_connector_plate_base_joint" type="fixed">
+       <origin xyz="0 0 0.0018" rpy="0 0 0" />
+       <parent link="${side}_gripper_base"  />
+       <child  link="${side}_connector_plate_base" />
+     </joint>
+     
+     <!-- Connector Plate base Link -->
+     <link name="${side}_connector_plate_base">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <mass value="0.0" />
+        <inertia ixx="6.9922E-05"  ixy="6.1026E-08"  ixz="-1.7042E-06"
+               iyy="6.8188E-05"  iyz="-1.6118E-08" izz="0.00012392" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+		<mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/DAE/ati_9105_t_delta.DAE" />
+        </geometry>
+        <material name="black">
+          <color rgba="0.05 0.05 0.05 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0.0135" rpy="0 0 0" />
+          <geometry>
+            <cylinder length="${connector_plate_length*2.0}" radius="0.04"/>
+          </geometry>
+          <material name="darkred">
+            <color rgba=".5 .1 .1 1"/>
+          </material>
+      </collision>
+    </link>
+    <xacro:if value="${gazebo}">
+      <gazebo reference="${side}_connector_plate_base">
+        <material>Gazebo/FlatBlack</material>
+      </gazebo>
+    </xacro:if>
+
+    <!-- Connector Plate base-mount joint -->
+    <joint name="${side}_connector_plate_mount_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent link="${side}_connector_plate_base"  />
+      <child  link="${side}_connector_plate_mount" />
+    </joint>
+    
+    <link name="${side}_connector_plate_mount" />
+
+<!-- Reference Joints, and links, non-visual, for transform references, and motion planning purposes -->
+    <!--To connect this file with the sawyer_base.urdf.xacro a joint must be created between link "right_hand" in the latter file and "pneumatic_gripper_base", this way there is a transform between the robot last link and the End Of Arm Tooling in this file -->
+
+    <!-- Gripper Base Joint -->
+    <!-- "right_hand" link position is with respect to its correponding joint, so the end_of_arm_offset is with respect to the last joint at the robot end effector at sawyer_base.urdf.xacro -->
+    <xacro:property name="end_of_arm_offset" value="-0.005" scope="local"/>
+    <joint name="${side}_gripper_base_joint" type="fixed">
+      <origin rpy="0 0 0" xyz="0 0 ${end_of_arm_offset}"/>
+      <parent link="${side}_hand"/>
+      <child link="${side}_gripper_base"/>
+    </joint>
+
+    <!-- To give a reference of the the Tool Center Point which is at the gripper fingers center a joint and link is created, these are for reference in motion planning context --> 
+
+    <!-- Gripper Tip joint -->
+    <joint name="${side}_gripper_tip_joint" type="fixed">
+      <origin rpy="0 0 0" xyz="0 0 ${(-1*end_of_arm_offset)+connector_plate_length+pneumatic_gripper_base_length+finger_length}"/>
+      <parent link="${side}_gripper_base"/>
+      <child link="${side}_gripper_tip"/>
+    </joint>
+
+    <!-- Electric Gripper Tip link -->
+    <link name="${side}_gripper_tip">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="2e-06"/>
+        <inertia ixx="1.1e-09" ixy="0" ixz="0" iyy="1.1e-09" iyz="0" izz="1.1e-09"/>
+      </inertial>
+    </link>
+ 
+  </xacro:macro>
+</robot>
