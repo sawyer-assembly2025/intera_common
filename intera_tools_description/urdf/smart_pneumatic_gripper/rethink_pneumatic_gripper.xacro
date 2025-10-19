@@ -10,10 +10,11 @@
 <!-- #ToDo Update distances in meters for pneumatic gripper -->
 	
     <xacro:property name="end_of_arm_offset" value="-0.005" scope="local"/>
-    <xacro:property name="connector_plate_length" value="0.0151" scope="local"/>
+    <xacro:property name="connector_plate_length" value="0.032" scope="local"/>
     <xacro:property name="pneumatic_gripper_base_length" value="0.04552" scope="local"/>
-    <xacro:property name="ft_sensor_lenght" value="0.0001" scope="local"/>
-    <xacro:property name="ft_gripper_adapter_lenght" value="0.0001" scope="local"/>
+    <xacro:property name="ft_sensor_length" value="0.033" scope="local"/>
+    <xacro:property name="adapter_top_length" value="0.013" scope="local"/>
+    <xacro:property name="adapter_bottom_length" value="0.018" scope="local"/>
     <xacro:property name="finger_length" value="0.0021" scope="local"/>
 
 <!-- Start Kinematic Chain -->
@@ -40,24 +41,24 @@
      <!-- Connector Plate base Link -->
      <link name="${side}_connector_plate_base">
       <inertial>
-        <origin xyz="0 0 0" rpy="0 0 0" />
+	      <origin xyz="0 0 0" rpy="3.1416 0 0" />
         <mass value="0.0" />
         <inertia ixx="6.9922E-05"  ixy="6.1026E-08"  ixz="-1.7042E-06"
                iyy="6.8188E-05"  iyz="-1.6118E-08" izz="0.00012392" />
       </inertial>
       <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="3.1416 0 0" />
         <geometry>
-		<mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/DAE/ati_9105_t_delta.DAE" />
+		<mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/smart_click_adapter.STL" scale="0.001 0.001 0.001" />
         </geometry>
         <material name="black">
           <color rgba="0.05 0.05 0.05 1" />
         </material>
       </visual>
       <collision>
-        <origin xyz="0 0 0.0135" rpy="0 0 0" />
+        <origin xyz="0 0 0.0135" rpy="3.1416 0 0" />
           <geometry>
-            <cylinder length="${connector_plate_length*2.0}" radius="0.04"/>
+            <cylinder length="${connector_plate_length}" radius="0.04"/>
           </geometry>
           <material name="darkred">
             <color rgba=".5 .1 .1 1"/>
@@ -72,12 +73,134 @@
 
     <!-- Connector Plate base-mount joint -->
     <joint name="${side}_connector_plate_mount_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 0 0" />
+	    <origin xyz="0 0 ${connector_plate_length} " rpy="0 0 0" />
       <parent link="${side}_connector_plate_base"  />
       <child  link="${side}_connector_plate_mount" />
     </joint>
-    
+
+    <!-- Connector Plate mount link --> 
     <link name="${side}_connector_plate_mount" />
+
+    <!-- Connector plate mount-F/T sensor joint -->
+    <joint name="${side}_connector_plate_ft_sensor_joint" type="fixed">
+	    <origin xyz="0 0 0" rpy="0 0 0" />
+      <parent link="${side}_connector_plate_mount"  />
+      <child  link="${side}_ft_sensor_link" />
+    </joint>
+
+    <!-- F/T sensor link -->
+    <link name="${side}_ft_sensor_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="3.1416 0 0" />
+        <geometry>
+		<mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/ati_9105_t_delta.STL" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="3.1416 0 0" />
+        <geometry>
+		<cylinder length="${ft_sensor_length}" radius="0.046"/>
+        </geometry>
+        <material name="darkred">
+          <color rgba=".5 .1 .1 1"/>
+        </material>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+        <mass value="2e-06"/>
+        <inertia ixx="1.1e-09" ixy="0" ixz="0" iyy="1.1e-09" iyz="0" izz="1.1e-09"/>
+      </inertial>
+    </link>
+
+    <!-- F/T Sensor-Adapter Top Part Joint -->
+    <joint name="${side}_ft_sensor_adapter_top_joint" type="fixed">        <origin xyz="0 0 ${ft_sensor_length}" rpy="0 0 0" />                 <parent link="${side}_ft_sensor_link" />
+      <child  link="${side}_adapter_top" />
+    </joint>
+
+    <!-- Adapter Top Part Link -->
+    <link name="${side}_adapter_top">
+      <visual>
+	      <origin xyz="0 0 ${adapter_top_length}" rpy="${pi/2*-1} 0 0" />
+        <geometry>
+		<mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/ft_gripper_adapter_top.STL" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </visual>
+      <collision>
+	      <origin xyz="0 0 ${adapter_top_length}" rpy="${pi/2*-1} 0 0" />
+        <geometry>
+		<cylinder length="${adapter_top_length}" radius="0.046"/>
+        </geometry>
+        <material name="darkred">
+          <color rgba=".5 .1 .1 1"/>
+        </material>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+        <mass value="2e-06"/>
+        <inertia ixx="1.1e-09" ixy="0" ixz="0" iyy="1.1e-09" iyz="0" izz="1.1e-09"/>
+      </inertial>
+    </link>
+
+    <!-- Top-Bottom Adapter Parts Joint -->
+    <joint name="${side}_adapter_top_bottom_joint" type="fixed">        <origin xyz="0 0 ${adapter_top_length}" rpy="0 0 0" />                 <parent link="${side}_adapter_top" />
+      <child  link="${side}_adapter_bottom" />
+    </joint>
+
+    <!-- Adapter Bottom Part Link -->
+    <link name="${side}_adapter_bottom">
+      <visual>
+	      <origin xyz="0 0 ${adapter_bottom_length}" rpy="${pi/2*-1} 0 0" />
+        <geometry>
+		<mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/ft_gripper_adapter_bottom.STL" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </visual>
+      <collision>
+	      <origin xyz="0 0 ${adapter_bottom_length}" rpy="${pi/2*-1} 0 0" />
+        <geometry>
+		<cylinder length="${adapter_bottom_length}" radius="0.046"/>
+        </geometry>
+        <material name="darkred">
+          <color rgba=".5 .1 .1 1"/>
+        </material>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+        <mass value="2e-06"/>
+        <inertia ixx="1.1e-09" ixy="0" ixz="0" iyy="1.1e-09" iyz="0" izz="1.1e-09"/>
+      </inertial>
+    </link>
+
+   <!-- Bottom Adapter- Electric Gripper Base joint -->
+    <joint name="${side}_electric_gripper_base_joint" type="fixed">
+	    <origin rpy="0 0 0" xyz="0 0 ${adapter_bottom_length}"/>
+      <parent link="${side}_adapter_bottom"/>
+      <child link="${side}_electric_gripper_base"/>
+    </joint>
+
+    <!-- Electric Gripper Base Link -->
+    <link name="${side}_electric_gripper_base">
+      <visual>
+	      <origin rpy="0 0 ${pi}" xyz="0 0 0"/>
+        <geometry>
+	<mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/gripper_base.STL" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </visual>
+      <collision>
+	      <origin rpy="0 0 ${pi}" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="0.1" radius="0.029"/>
+        </geometry>
+        <material name="darkred">
+          <color rgba=".5 .1 .1 1"/>
+        </material>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+        <mass value="2e-06"/>
+        <inertia ixx="1.1e-09" ixy="0" ixz="0" iyy="1.1e-09" iyz="0" izz="1.1e-09"/>
+      </inertial>
+    </link>
+
 
 <!-- Reference Joints, and links, non-visual, for transform references, and motion planning purposes -->
     <!--To connect this file with the sawyer_base.urdf.xacro a joint must be created between link "right_hand" in the latter file and "pneumatic_gripper_base", this way there is a transform between the robot last link and the End Of Arm Tooling in this file -->
