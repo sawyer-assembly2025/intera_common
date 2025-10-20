@@ -2,14 +2,18 @@
 
 <!-- Main header to define URDF name and if xacro files will be used-->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="rethink_pneumatic_gripper">
+
+<!-- Author: Héctor Quijada Valle -->
 <!-- Macro name defined inside macro file, so it can be called from a different URDF file -->
 <!-- side, always "right" for Sawyer, if gazebo simulation to be used set to "true", if ft_sensor needed set to "true", option to change slot position from "1" to "10" --> 
-<xacro:macro name="rethink_pneumatic_gripper" params="side gazebo use_ftsensor slot_position">
+<xacro:macro name="rethink_pneumatic_gripper" params="side gazebo use_ftsensor tip_slot_pos finger_slot_pos">
 
 <!-- Lenght Properties of each element in End of Arm Tooling -->
 <!-- #ToDo Update distances in meters for pneumatic gripper -->
 	
-    <xacro:property name="end_of_arm_offset" value="-0.005" scope="local"/>
+    <xacro:property name="end_of_arm_offset" value="-0.012" scope="local"/>
+    <xacro:property name="tip_slot_offset" value="0.015" scope="local"/>
+    <xacro:property name="finger_slot_offset" value="-0.008" scope="local"/>
     <xacro:property name="connector_plate_length" value="0.032" scope="local"/>
     <xacro:property name="pneumatic_gripper_base_length" value="0.0282" scope="local"/>
     <xacro:property name="ft_sensor_length" value="0.033" scope="local"/>
@@ -41,13 +45,13 @@
      <!-- Connector Plate base Link -->
      <link name="${side}_connector_plate_base">
       <inertial>
-	      <origin xyz="0 0 0" rpy="3.1416 0 0" />
+	      <origin xyz="0 0 0" rpy="${pi} 0 0" />
         <mass value="0.0" />
-        <inertia ixx="6.9922E-05"  ixy="6.1026E-08"  ixz="-1.7042E-06"
-               iyy="6.8188E-05"  iyz="-1.6118E-08" izz="0.00012392" />
+        <inertia ixx="0.0000292897"  ixy="6.1026E-08"  ixz="-1.5353186E-7"
+               iyy="0.0000296079"  iyz="-3.597884E-8" izz="0.0000508198" />
       </inertial>
       <visual>
-        <origin xyz="0 0 0" rpy="3.1416 0 0" />
+	<origin xyz="0 0 0" rpy="${pi} 0 0" />
         <geometry>
 		<mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/smart_click_adapter.STL" scale="0.001 0.001 0.001" />
         </geometry>
@@ -56,9 +60,9 @@
         </material>
       </visual>
       <collision>
-        <origin xyz="0 0 0.0135" rpy="3.1416 0 0" />
+	  <origin xyz="0 0 0.0135" rpy="${pi} 0 0" />
           <geometry>
-            <cylinder length="${connector_plate_length}" radius="0.04"/>
+            <cylinder length="${connector_plate_length}" radius="0.06"/>
           </geometry>
           <material name="darkred">
             <color rgba=".5 .1 .1 1"/>
@@ -91,13 +95,13 @@
     <!-- F/T sensor link -->
     <link name="${side}_ft_sensor_link">
       <visual>
-        <origin xyz="0 0 0" rpy="3.1416 0 0" />
+	<origin xyz="0 0 0" rpy="${pi} 0 0" />
         <geometry>
 		<mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/ati_9105_t_delta.STL" scale="0.001 0.001 0.001"/>
         </geometry>
       </visual>
       <collision>
-        <origin xyz="0 0 0" rpy="3.1416 0 0" />
+	      <origin xyz="0 0 ${ft_sensor_length*0.5}" rpy="${pi} 0 0" />
         <geometry>
 		<cylinder length="${ft_sensor_length}" radius="0.046"/>
         </geometry>
@@ -106,11 +110,17 @@
         </material>
       </collision>
       <inertial>
-        <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+	<origin rpy="${pi} 0 0" xyz="0 0 0"/>
         <mass value="2e-06"/>
-        <inertia ixx="1.1e-09" ixy="0" ixz="0" iyy="1.1e-09" iyz="0" izz="1.1e-09"/>
+        <inertia ixx="0.0001756735" ixy="6.8322E-8" ixz="-2.7814E-8" iyy="0.0001757811" iyz="-9.2588E-8" izz="0.0002122946"/>
       </inertial>
     </link>
+    <xacro:if value="${gazebo}">
+      <gazebo reference="${side}_ft_sensor_link">
+        <material>Gazebo/Grey</material>
+      </gazebo>
+    </xacro:if>
+
 
     <!-- F/T Sensor-Adapter Top Part Joint -->
     <joint name="${side}_ft_sensor_adapter_top_joint" type="fixed">        <origin xyz="0 0 ${ft_sensor_length}" rpy="0 0 0" />                 <parent link="${side}_ft_sensor_link" />
@@ -120,13 +130,13 @@
     <!-- Adapter Top Part Link -->
     <link name="${side}_adapter_top">
       <visual>
-	      <origin xyz="0 0 ${adapter_top_length}" rpy="${pi/2*-1} 0 0" />
+	      <origin xyz="0 0 ${adapter_top_length}" rpy="${-pi/2} 0 0" />
         <geometry>
 		<mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/ft_gripper_adapter_top.STL" scale="0.001 0.001 0.001"/>
         </geometry>
       </visual>
       <collision>
-	      <origin xyz="0 0 ${adapter_top_length}" rpy="${pi/2*-1} 0 0" />
+	      <origin xyz="0 0 ${adapter_top_length*0.5}" rpy="0 0 0" />
         <geometry>
 		<cylinder length="${adapter_top_length}" radius="0.046"/>
         </geometry>
@@ -135,11 +145,16 @@
         </material>
       </collision>
       <inertial>
-        <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+        <origin rpy="${-pi/2} 0 0" xyz="0.0 0.0 0.0"/>
         <mass value="2e-06"/>
-        <inertia ixx="1.1e-09" ixy="0" ixz="0" iyy="1.1e-09" iyz="0" izz="1.1e-09"/>
+        <inertia ixx="0.0000418848" ixy="0" ixz="0" iyy="0.0000761051" iyz="0" izz="0.0000418848"/>
       </inertial>
     </link>
+    <xacro:if value="${gazebo}">
+      <gazebo reference="${side}_adapter_top">
+        <material>Gazebo/Purple</material>
+      </gazebo>
+    </xacro:if>
 
     <!-- Top-Bottom Adapter Parts Joint -->
     <joint name="${side}_adapter_top_bottom_joint" type="fixed">        <origin xyz="0 0 ${adapter_top_length}" rpy="0 0 0" />                 <parent link="${side}_adapter_top" />
@@ -149,13 +164,13 @@
     <!-- Adapter Bottom Part Link -->
     <link name="${side}_adapter_bottom">
       <visual>
-	      <origin xyz="0 0 ${adapter_bottom_length}" rpy="${pi/2*-1} 0 0" />
+	      <origin xyz="0 0 ${adapter_bottom_length}" rpy="${-pi/2} 0 ${pi/2}" />
         <geometry>
 		<mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/ft_gripper_adapter_bottom.STL" scale="0.001 0.001 0.001"/>
         </geometry>
       </visual>
       <collision>
-	      <origin xyz="0 0 ${adapter_bottom_length}" rpy="${pi/2*-1} 0 0" />
+	      <origin xyz="0 0 ${adapter_bottom_length*0.5}" rpy="0 0 ${pi/2}" />
         <geometry>
 		<cylinder length="${adapter_bottom_length}" radius="0.046"/>
         </geometry>
@@ -164,11 +179,17 @@
         </material>
       </collision>
       <inertial>
-        <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+	<origin rpy="${-pi/2} 0 ${pi/2}" xyz="0.0 0.0 0.0"/>
         <mass value="2e-06"/>
-        <inertia ixx="1.1e-09" ixy="0" ixz="0" iyy="1.1e-09" iyz="0" izz="1.1e-09"/>
+        <inertia ixx="0.0000721906" ixy="0" ixz="0" iyy="0.0001202265" iyz="0" izz="0.0000723151"/>
       </inertial>
     </link>
+    <xacro:if value="${gazebo}">
+      <gazebo reference="${side}_adapter_bottom">
+        <material>Gazebo/Purple</material>
+      </gazebo>
+    </xacro:if>
+
 
    <!-- Bottom Adapter- Pneumatic Gripper Base joint -->
     <joint name="${side}_pneumatic_base_joint" type="fixed">
@@ -193,20 +214,26 @@
         </geometry>
       </visual>
       <collision>
-	      <origin rpy="${pi/2} 0 0" xyz="0 0 0"/>
+	      <origin rpy="0 0 0" xyz="-0.012 0 0.0196"/>
         <geometry>
-          <cylinder length="0" radius="0"/>
+	  <box size="0.056 0.0871 0.0392"/>
         </geometry>
         <material name="darkred">
           <color rgba=".5 .1 .1 1"/>
         </material>
       </collision>
       <inertial>
-        <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+	      <origin rpy="${pi/2} 0 0" xyz="0.0 0.0 0.0"/>
         <mass value="2e-06"/>
-        <inertia ixx="1.1e-09" ixy="0" ixz="0" iyy="1.1e-09" iyz="0" izz="1.1e-09"/>
+        <inertia ixx="0.0000330475" ixy="1.31E-8" ixz="0" iyy="0.0000176978" iyz="0" izz="0.0000203961"/>
       </inertial>
     </link>
+    <xacro:if value="${gazebo}">
+      <gazebo reference="${side}_pneumatic_gripper_base">
+        <material>Gazebo/DarkGrey</material>
+      </gazebo>
+    </xacro:if>
+
 
     <!-- Pneumatic Gripper Cover -->
     <link name="${side}_pneumatic_gripper_cover">
@@ -216,16 +243,13 @@
 		<mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/gripper_base.STL" scale="0.001 0.001 0.001"/>
         </geometry>
       </visual>
-      <collision>
-	      <origin rpy="0 0 ${pi}" xyz="0 0 0"/>
-        <geometry>
-          <cylinder length="0.1" radius="0.029"/>
-        </geometry>
-        <material name="darkred">
-          <color rgba=".5 .1 .1 1"/>
-        </material>
-      </collision>
     </link>
+    <xacro:if value="${gazebo}">
+      <gazebo reference="${side}_pneumatic_gripper_cover">
+        <material>Gazebo/FlatBlack</material>
+      </gazebo>
+    </xacro:if>
+
 
     <!-- Left finger joint -->
     <joint name="${side}_gripper_l_finger_joint" type="prismatic">
@@ -250,16 +274,20 @@
         <geometry>
           <box size="0 0 0"/>
         </geometry>
+	  <material name="darkred">
+            <color rgba=".5 .1 .1 1"/>
+          </material>
       </collision>
       <inertial>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
+	<origin rpy="${pi/2} 0 0" xyz="0 0.0295 0"/>
         <mass value="0.001"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <inertia ixx="0.0000013187" ixy="0" ixz="0" iyy="0.0000012511" iyz="2.8731E-7" izz="2.2756E-7"/>
       </inertial>
     </link>
 
     <xacro:if value="${gazebo}">
       <gazebo reference="${side}_gripper_l_finger">
+        <material>Gazebo/Grey</material>
         <mu1>1000</mu1>
         <mu2>1000</mu2>
         <fdir1>0.0 0.0 1.0</fdir1>
@@ -276,7 +304,7 @@
     </joint>
 
     <!-- Left finger base link -->
-   <link name="${side}_gripper_l_finger_base">
+    <link name="${side}_gripper_l_finger_base">
       <visual>
 	      <origin rpy="0 0 ${pi/2}" xyz="0 0.0185 0"/>
         <geometry>
@@ -284,15 +312,18 @@
         </geometry>
       </visual>
       <collision>
-	      <origin rpy="0 0 ${pi/2}" xyz="0 0.0185 0"/>
+	      <origin rpy="0 0 ${pi/2}" xyz="0 0.061 0"/>
         <geometry>
-          <box size="0 0 0"/>
+          <box size="0.085 0.024 0.006"/>
         </geometry>
+	  <material name="darkred">
+            <color rgba=".5 .1 .1 1"/>
+          </material>
       </collision>
       <inertial>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
+	      <origin rpy="0 0 ${pi/2}" xyz="0 0.0185 0"/>
         <mass value="0.001"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <inertia ixx="0.00000151" ixy="-1.23E-12" ixz="0.0000025354" iyy="0.000042463" iyz="-1.23E-12" izz="0.0000433196"/>
       </inertial>
     </link>
 
@@ -312,15 +343,18 @@
         </geometry>
       </visual>
       <collision>
-	      <origin rpy="0 0 ${pi/2}" xyz="0 0.021 0"/>
+	  <origin rpy="0 0 0" xyz="0 0.024 0.04475"/>
         <geometry>
-          <box size="0 0 0"/>
+          <box size="0.0275 0.006 0.0795"/>
         </geometry>
+	  <material name="darkred">
+            <color rgba=".5 .1 .1 1"/>
+          </material>
       </collision>
       <inertial>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
+	<origin rpy="0 0 ${pi/2}" xyz="0 0.021 0"/>
         <mass value="0.001"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <inertia ixx="0.0000683111" ixy="-1.24623E-9" ixz="0.0000038251" iyy="0.0000668321" iyz="-1.738481E-8" izz="0.0000031831"/>
       </inertial>
     </link>
 
@@ -342,13 +376,16 @@
       <collision>
 	      <origin rpy="0 0 ${pi/2}" xyz="0 0.021 0.0726"/>
         <geometry>
-          <box size="0 0 0"/>
+              <mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/pneumatic_finger_tip.STL" scale="0.001 0.001 0.001"/> 
         </geometry>
+	  <material name="darkred">
+            <color rgba=".5 .1 .1 1"/>
+          </material>
       </collision>
       <inertial>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
+	      <origin rpy="0 0 ${pi/2}" xyz="0 0.021 0.0726"/>
         <mass value="0.001"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <inertia ixx="0.0000064492" ixy="-2.802891E-8" ixz="-2.65457E-9" iyy="0.0000019488" iyz="1.4972E-10" izz="0.0000057675"/>
       </inertial>
     </link>
 
@@ -378,14 +415,15 @@
         </geometry>
       </collision>
       <inertial>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
+	      <origin rpy="${pi/2} 0 ${pi}" xyz="0 -0.0295 0"/>
         <mass value="0.001"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <inertia ixx="0.0000013187" ixy="0" ixz="0" iyy="0.0000012511" iyz="2.8731E-7" izz="2.2756E-7"/>
       </inertial>
     </link>
 
     <xacro:if value="${gazebo}">
       <gazebo reference="${side}_gripper_r_finger">
+        <material>Gazebo/Grey</material>
         <mu1>1000</mu1>
         <mu2>1000</mu2>
         <fdir1>0.0 0.0 1.0</fdir1>
@@ -410,15 +448,18 @@
         </geometry>
       </visual>
       <collision>
-	      <origin rpy="0 0 ${-pi/2}" xyz="0 -0.0185 0"/>
+              <origin rpy="0 0 ${-pi/2}" xyz="0 -0.061 0"/>
         <geometry>
-          <box size="0 0 0"/>
+          <box size="0.085 0.024 0.006"/>
         </geometry>
+          <material name="darkred">
+            <color rgba=".5 .1 .1 1"/>
+          </material>
       </collision>
       <inertial>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
+	      <origin rpy="0 0 ${-pi/2}" xyz="0 -0.0185 0"/>
         <mass value="0.001"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <inertia ixx="0.00000151" ixy="-1.23E-12" ixz="0.0000025354" iyy="0.000042463" iyz="-1.23E-12" izz="0.0000433196"/>
       </inertial>
     </link>
 
@@ -438,15 +479,18 @@
         </geometry>
       </visual>
       <collision>
-	      <origin rpy="0 0 ${-pi/2}" xyz="0 -0.021 0"/>
+          <origin rpy="0 0 0" xyz="0 -0.024 0.04475"/>
         <geometry>
-          <box size="0 0 0"/>
+          <box size="0.0275 0.006 0.0795"/>
         </geometry>
+          <material name="darkred">
+            <color rgba=".5 .1 .1 1"/>
+          </material>
       </collision>
       <inertial>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
+	      <origin rpy="0 0 ${-pi/2}" xyz="0 -0.021 0"/>
         <mass value="0.001"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <inertia ixx="0.0000683111" ixy="-1.24623E-9" ixz="0.0000038251" iyy="0.0000668321" iyz="-1.738481E-8" izz="0.0000031831"/>
       </inertial>
     </link>
 
@@ -466,15 +510,18 @@
         </geometry>
       </visual>
       <collision>
-	      <origin rpy="0 0 ${-pi/2}" xyz="0 -0.021 0.0726"/>
+              <origin rpy="0 0 ${-pi/2}" xyz="0 -0.021 0.0726"/>
         <geometry>
-          <box size="0 0 0"/>
+              <mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/pneumatic_finger_tip.STL" scale="0.001 0.001 0.001"/>
         </geometry>
+          <material name="darkred">
+            <color rgba=".5 .1 .1 1"/>
+          </material>
       </collision>
       <inertial>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
+	      <origin rpy="0 0 ${-pi/2}" xyz="0 -0.021 0.0726"/>
         <mass value="0.001"/>
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+        <inertia ixx="0.0000064492" ixy="-2.802891E-8" ixz="-2.65457E-9" iyy="0.0000019488" iyz="1.4972E-10" izz="0.0000057675"/>
       </inertial>
     </link>
 
@@ -484,8 +531,7 @@
     <!-- Gripper Base Joint -->
     <!-- "right_hand" link position is with respect to its correponding joint, so the end_of_arm_offset is with respect to the last joint at the robot end effector at sawyer_base.urdf.xacro -->
     <xacro:property name="end_of_arm_offset" value="-0.005" scope="local"/>
-    <joint name="${side}_gripper_base_joint" type="fixed">
-      <origin rpy="0 0 0" xyz="0 0 ${end_of_arm_offset}"/>
+    <joint name="${side}_gripper_base_joint" type="fixed">						  <origin rpy="0 0 0" xyz="0 0 ${end_of_arm_offset}"/>
       <parent link="${side}_hand"/>
       <child link="${side}_gripper_base"/>
     </joint>
