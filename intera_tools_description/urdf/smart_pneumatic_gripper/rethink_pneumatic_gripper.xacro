@@ -19,7 +19,12 @@
     <xacro:property name="ft_sensor_length" value="0.033" scope="local"/>
     <xacro:property name="adapter_top_length" value="0.013" scope="local"/>
     <xacro:property name="adapter_bottom_length" value="0.018" scope="local"/>
-    <xacro:property name="finger_length" value="0.0021" scope="local"/>
+
+<!-- Finger Length Properties -->
+    <xacro:property name="finger_move_length" value="0.012" scope="local"/>
+    <xacro:property name="finger_base_length" value="0.006" scope="local"/>
+    <xacro:property name="finger_to_tip_length" value="${0.0726-((tip_slot_pos-1)*0.015)}" scope="local"/>
+    <xacro:property name="finger_total_length" value="${finger_move_length + finger_base_length + finger_to_tip_length}" scope="local"/>
 
 <!-- Start Kinematic Chain -->
 <!-- Structure is ordered as a tree: link, joint, link, to observe geometrical relationships between each of them-->
@@ -125,7 +130,15 @@
     <!-- F/T Sensor-Adapter Top Part Joint -->
     <joint name="${side}_ft_sensor_adapter_top_joint" type="fixed">        <origin xyz="0 0 ${ft_sensor_length}" rpy="0 0 0" />                 <parent link="${side}_ft_sensor_link" />
       <child  link="${side}_adapter_top" />
+      <provideFeedback>true</provideFeedback>
     </joint>
+    
+        <plugin name="ft_sensor" filename="libgazebo_ros_ft_sensor.so">
+            <updateRate>100.0</updateRate>
+            <topicName>ft_sensor_topic</topicName>
+            <jointName>${side}_ft_sensor_adapter_top_joint</jointName>
+        </plugin>
+
 
     <!-- Adapter Top Part Link -->
     <link name="${side}_adapter_top">
@@ -305,14 +318,14 @@
 
     <!-- Left finger base link -->
     <link name="${side}_gripper_l_finger_base">
-      <visual>
+      <visual> 
 	      <origin rpy="0 0 ${pi/2}" xyz="0 0.0185 0"/>
         <geometry>
         <mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/pneumatic_finger_base.STL" scale="0.001 0.001 0.001"/>
         </geometry>
       </visual>
       <collision>
-	      <origin rpy="0 0 ${pi/2}" xyz="0 0.061 0"/>
+	      <origin rpy="0 0 ${pi/2}" xyz="0 0.047 0.003"/>
         <geometry>
           <box size="0.085 0.024 0.006"/>
         </geometry>
@@ -329,7 +342,7 @@
 
     <!-- Left finger base - finger body joint -->
     <joint name="${side}_gripper_l_finger_body_joint" type="fixed">
-	    <origin rpy="0 0 0" xyz="0 0 0.006"/>
+	    <origin rpy="0 0 0" xyz="0 ${(finger_slot_pos-1)*0.008} 0.006"/>
       <parent link="${side}_gripper_l_finger_base"/>
       <child link="${side}_gripper_l_finger_body"/>
     </joint>
@@ -337,13 +350,13 @@
     <!-- Left finger body link -->
    <link name="${side}_gripper_l_finger_body">
       <visual>
-	      <origin rpy="0 0 ${pi/2}" xyz="0 0.021 0"/>
+	      <origin rpy="0 0 ${pi/2}" xyz="0 -0.0035 0"/>
         <geometry>
         <mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/pneumatic_finger.STL" scale="0.001 0.001 0.001"/>
         </geometry>
       </visual>
       <collision>
-	  <origin rpy="0 0 0" xyz="0 0.024 0.04475"/>
+	  <origin rpy="0 0 0" xyz="0 -0.0005 0.03975"/>
         <geometry>
           <box size="0.0275 0.006 0.0795"/>
         </geometry>
@@ -352,7 +365,7 @@
           </material>
       </collision>
       <inertial>
-	<origin rpy="0 0 ${pi/2}" xyz="0 0.021 0"/>
+	<origin rpy="0 0 ${pi/2}" xyz="0 -0.0035 0"/>
         <mass value="0.001"/>
         <inertia ixx="0.0000683111" ixy="-1.24623E-9" ixz="0.0000038251" iyy="0.0000668321" iyz="-1.738481E-8" izz="0.0000031831"/>
       </inertial>
@@ -368,13 +381,13 @@
     <!-- Left finger tip link -->
    <link name="${side}_gripper_l_finger_tip">
       <visual>
-	      <origin rpy="0 0 ${pi/2}" xyz="0 0.021 0.0726"/>
+	      <origin rpy="0 0 ${pi/2}" xyz="0 -0.0035 ${0.0726-((tip_slot_pos-1)*0.015)}"/>
         <geometry>
         <mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/pneumatic_finger_tip.STL" scale="0.001 0.001 0.001"/>
         </geometry>
       </visual>
       <collision>
-	      <origin rpy="0 0 ${pi/2}" xyz="0 0.021 0.0726"/>
+	      <origin rpy="0 0 ${pi/2}" xyz="0 -0.0035 ${0.0726-((tip_slot_pos-1)*0.015)}"/>
         <geometry>
               <mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/pneumatic_finger_tip.STL" scale="0.001 0.001 0.001"/> 
         </geometry>
@@ -383,7 +396,7 @@
           </material>
       </collision>
       <inertial>
-	      <origin rpy="0 0 ${pi/2}" xyz="0 0.021 0.0726"/>
+	      <origin rpy="0 0 ${pi/2}" xyz="0 -0.0035 ${0.0726-((tip_slot_pos-1)*0.015)}"/>
         <mass value="0.001"/>
         <inertia ixx="0.0000064492" ixy="-2.802891E-8" ixz="-2.65457E-9" iyy="0.0000019488" iyz="1.4972E-10" izz="0.0000057675"/>
       </inertial>
@@ -448,7 +461,7 @@
         </geometry>
       </visual>
       <collision>
-              <origin rpy="0 0 ${-pi/2}" xyz="0 -0.061 0"/>
+              <origin rpy="0 0 ${-pi/2}" xyz="0 -0.047 0.003"/>
         <geometry>
           <box size="0.085 0.024 0.006"/>
         </geometry>
@@ -465,7 +478,7 @@
 
     <!-- Right finger base - finger body joint -->
     <joint name="${side}_gripper_r_finger_body_joint" type="fixed">
-	    <origin rpy="0 0 0" xyz="0 0 0.006"/>
+	    <origin rpy="0 0 0" xyz="0 ${(finger_slot_pos-1)*-0.008} 0.006"/>
       <parent link="${side}_gripper_r_finger_base"/>
       <child link="${side}_gripper_r_finger_body"/>
     </joint>
@@ -473,13 +486,13 @@
     <!-- Right finger body link -->
    <link name="${side}_gripper_r_finger_body">
       <visual>
-	      <origin rpy="0 0 ${-pi/2}" xyz="0 -0.021 0"/>
+	      <origin rpy="0 0 ${-pi/2}" xyz="0 0.0035 0"/>
         <geometry>
         <mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/pneumatic_finger.STL" scale="0.001 0.001 0.001"/>
         </geometry>
       </visual>
       <collision>
-          <origin rpy="0 0 0" xyz="0 -0.024 0.04475"/>
+          <origin rpy="0 0 0" xyz="0 0.0005 0.03975"/>
         <geometry>
           <box size="0.0275 0.006 0.0795"/>
         </geometry>
@@ -488,7 +501,7 @@
           </material>
       </collision>
       <inertial>
-	      <origin rpy="0 0 ${-pi/2}" xyz="0 -0.021 0"/>
+	      <origin rpy="0 0 ${-pi/2}" xyz="0 0.0035 0"/>
         <mass value="0.001"/>
         <inertia ixx="0.0000683111" ixy="-1.24623E-9" ixz="0.0000038251" iyy="0.0000668321" iyz="-1.738481E-8" izz="0.0000031831"/>
       </inertial>
@@ -504,13 +517,13 @@
     <!-- Right finger tip link -->
    <link name="${side}_gripper_r_finger_tip">
       <visual>
-	      <origin rpy="0 0 ${-pi/2}" xyz="0 -0.021 0.0726"/>
+	      <origin rpy="0 0 ${-pi/2}" xyz="0 0.0035 ${0.0726-((tip_slot_pos-1)*0.015)}"/>
         <geometry>
         <mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/pneumatic_finger_tip.STL" scale="0.001 0.001 0.001"/>
         </geometry>
       </visual>
       <collision>
-              <origin rpy="0 0 ${-pi/2}" xyz="0 -0.021 0.0726"/>
+              <origin rpy="0 0 ${-pi/2}" xyz="0 0.0035 ${0.0726-((tip_slot_pos-1)*0.015)}"/>
         <geometry>
               <mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/pneumatic_finger_tip.STL" scale="0.001 0.001 0.001"/>
         </geometry>
@@ -519,7 +532,7 @@
           </material>
       </collision>
       <inertial>
-	      <origin rpy="0 0 ${-pi/2}" xyz="0 -0.021 0.0726"/>
+	      <origin rpy="0 0 ${-pi/2}" xyz="0 0.0035 ${0.0726-((tip_slot_pos-1)*0.015)}"/>
         <mass value="0.001"/>
         <inertia ixx="0.0000064492" ixy="-2.802891E-8" ixz="-2.65457E-9" iyy="0.0000019488" iyz="1.4972E-10" izz="0.0000057675"/>
       </inertial>
@@ -530,8 +543,9 @@
 
     <!-- Gripper Base Joint -->
     <!-- "right_hand" link position is with respect to its correponding joint, so the end_of_arm_offset is with respect to the last joint at the robot end effector at sawyer_base.urdf.xacro -->
-    <xacro:property name="end_of_arm_offset" value="-0.005" scope="local"/>
-    <joint name="${side}_gripper_base_joint" type="fixed">						  <origin rpy="0 0 0" xyz="0 0 ${end_of_arm_offset}"/>
+
+    <joint name="${side}_gripper_base_joint" type="fixed">						  
+      <origin rpy="0 0 0" xyz="0 0 ${end_of_arm_offset}"/>
       <parent link="${side}_hand"/>
       <child link="${side}_gripper_base"/>
     </joint>
@@ -540,7 +554,7 @@
 
     <!-- Gripper Tip joint -->
     <joint name="${side}_gripper_tip_joint" type="fixed">
-      <origin rpy="0 0 0" xyz="0 0 ${(-1*end_of_arm_offset)+connector_plate_length+pneumatic_gripper_base_length+finger_length}"/>
+      <origin rpy="0 0 0" xyz="0 0 ${connector_plate_length+ft_sensor_length+adapter_top_length+adapter_bottom_length+pneumatic_gripper_base_length+finger_total_length}"/>
       <parent link="${side}_gripper_base"/>
       <child link="${side}_gripper_tip"/>
     </joint>
