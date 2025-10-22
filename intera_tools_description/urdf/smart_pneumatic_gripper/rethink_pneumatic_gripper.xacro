@@ -11,7 +11,7 @@
 <!-- Lenght Properties of each element in End of Arm Tooling -->
 <!-- #ToDo Update distances in meters for pneumatic gripper -->
 	
-    <xacro:property name="end_of_arm_offset" value="-0.012" scope="local"/>
+    <xacro:property name="end_of_arm_offset" value="-0.009" scope="local"/>
     <xacro:property name="tip_slot_offset" value="0.015" scope="local"/>
     <xacro:property name="finger_slot_offset" value="-0.008" scope="local"/>
     <xacro:property name="connector_plate_length" value="0.032" scope="local"/>
@@ -34,7 +34,7 @@
     <link name="${side}_gripper_base">
       <inertial>
         <!-- Sum Gripper Mass - for whole end effector, measured from end of plastic cuff -->
-        <mass value="0.47"/>
+        <mass value="1.902"/>
         <origin rpy="0 0 0" xyz="0.0028 -0.0004 0.0343"/>
         <inertia ixx="1e-08" ixy="0" ixz="0" iyy="1e-08" iyz="0" izz="1e-08"/>
       </inertial>
@@ -51,7 +51,7 @@
      <link name="${side}_connector_plate_base">
       <inertial>
 	      <origin xyz="0 0 0" rpy="${pi} 0 0" />
-        <mass value="0.0" />
+        <mass value="0.387" />
         <inertia ixx="0.0000292897"  ixy="6.1026E-08"  ixz="-1.5353186E-7"
                iyy="0.0000296079"  iyz="-3.597884E-8" izz="0.0000508198" />
       </inertial>
@@ -100,13 +100,13 @@
     <!-- F/T sensor link -->
     <link name="${side}_ft_sensor_link">
       <visual>
-	<origin xyz="0 0 0" rpy="${pi} 0 0" />
+	      <origin xyz="0 0 0" rpy="${pi} 0 ${pi/2}" />
         <geometry>
 		<mesh filename="package://intera_tools_description/meshes/smart_pneumatic_gripper/STL/ati_9105_t_delta.STL" scale="0.001 0.001 0.001"/>
         </geometry>
       </visual>
       <collision>
-	      <origin xyz="0 0 ${ft_sensor_length*0.5}" rpy="${pi} 0 0" />
+	      <origin xyz="0 0 ${ft_sensor_length*0.5}" rpy="${pi} 0 ${pi/2}" />
         <geometry>
 		<cylinder length="${ft_sensor_length}" radius="0.046"/>
         </geometry>
@@ -115,8 +115,8 @@
         </material>
       </collision>
       <inertial>
-	<origin rpy="${pi} 0 0" xyz="0 0 0"/>
-        <mass value="2e-06"/>
+	      <origin rpy="${pi} 0 ${pi/2}" xyz="0 0 0"/>
+        <mass value="0.919"/>
         <inertia ixx="0.0001756735" ixy="6.8322E-8" ixz="-2.7814E-8" iyy="0.0001757811" iyz="-9.2588E-8" izz="0.0002122946"/>
       </inertial>
     </link>
@@ -130,15 +130,34 @@
     <!-- F/T Sensor-Adapter Top Part Joint -->
     <joint name="${side}_ft_sensor_adapter_top_joint" type="fixed">        <origin xyz="0 0 ${ft_sensor_length}" rpy="0 0 0" />                 <parent link="${side}_ft_sensor_link" />
       <child  link="${side}_adapter_top" />
-      <provideFeedback>true</provideFeedback>
     </joint>
     
-        <plugin name="ft_sensor" filename="libgazebo_ros_ft_sensor.so">
-            <updateRate>100.0</updateRate>
-            <topicName>ft_sensor_topic</topicName>
-            <jointName>${side}_ft_sensor_adapter_top_joint</jointName>
-        </plugin>
+    <!-- Fixed joint from F/T to tip to measure forces at the end effector -->
+    <joint name="${side}_ft_sensor_tip_joint" type="revolute">
+	    <origin xyz="0 0 ${ft_sensor_length}" rpy="0 0 ${pi/2}" />
+      <parent link="${side}_ft_sensor_link"  />
+      <child  link="${side}_ft_measure_tip" />
+      <limit lower="0" upper="0" effort="1000" velocity="6.5"/>
+    </joint>
 
+    <gazebo reference="${side}_ft_sensor_tip_joint">
+    	<provideFeedback>true</provideFeedback>
+    </gazebo>
+
+<gazebo>
+  <plugin name="gazebo_ros_ft_sensor" filename="libgazebo_ros_ft_sensor.so">
+    <!-- Required parameters -->
+    <updateRate>100.0</updateRate>
+    <always_on>true</always_on>
+    <visualize>true</visualize>
+    <jointName>${side}_ft_sensor_tip_joint</jointName>
+    <topicName>/robot/ft_sensor_topic</topicName>
+    <force_torque>
+    	<frame>sensor</frame>
+    	<measure_direction>parent_to_child</measure_direction>
+    </force_torque>
+  </plugin>
+</gazebo>
 
     <!-- Adapter Top Part Link -->
     <link name="${side}_adapter_top">
@@ -159,7 +178,7 @@
       </collision>
       <inertial>
         <origin rpy="${-pi/2} 0 0" xyz="0.0 0.0 0.0"/>
-        <mass value="2e-06"/>
+        <mass value="0.061"/>
         <inertia ixx="0.0000418848" ixy="0" ixz="0" iyy="0.0000761051" iyz="0" izz="0.0000418848"/>
       </inertial>
     </link>
@@ -193,7 +212,7 @@
       </collision>
       <inertial>
 	<origin rpy="${-pi/2} 0 ${pi/2}" xyz="0.0 0.0 0.0"/>
-        <mass value="2e-06"/>
+        <mass value="0.098"/>
         <inertia ixx="0.0000721906" ixy="0" ixz="0" iyy="0.0001202265" iyz="0" izz="0.0000723151"/>
       </inertial>
     </link>
@@ -237,7 +256,7 @@
       </collision>
       <inertial>
 	      <origin rpy="${pi/2} 0 0" xyz="0.0 0.0 0.0"/>
-        <mass value="2e-06"/>
+        <mass value="0.311"/>
         <inertia ixx="0.0000330475" ixy="1.31E-8" ixz="0" iyy="0.0000176978" iyz="0" izz="0.0000203961"/>
       </inertial>
     </link>
@@ -293,7 +312,7 @@
       </collision>
       <inertial>
 	<origin rpy="${pi/2} 0 0" xyz="0 0.0295 0"/>
-        <mass value="0.001"/>
+        <mass value="0.010"/>
         <inertia ixx="0.0000013187" ixy="0" ixz="0" iyy="0.0000012511" iyz="2.8731E-7" izz="2.2756E-7"/>
       </inertial>
     </link>
@@ -335,7 +354,7 @@
       </collision>
       <inertial>
 	      <origin rpy="0 0 ${pi/2}" xyz="0 0.0185 0"/>
-        <mass value="0.001"/>
+        <mass value="0.029"/>
         <inertia ixx="0.00000151" ixy="-1.23E-12" ixz="0.0000025354" iyy="0.000042463" iyz="-1.23E-12" izz="0.0000433196"/>
       </inertial>
     </link>
@@ -366,7 +385,7 @@
       </collision>
       <inertial>
 	<origin rpy="0 0 ${pi/2}" xyz="0 -0.0035 0"/>
-        <mass value="0.001"/>
+        <mass value="0.037"/>
         <inertia ixx="0.0000683111" ixy="-1.24623E-9" ixz="0.0000038251" iyy="0.0000668321" iyz="-1.738481E-8" izz="0.0000031831"/>
       </inertial>
     </link>
@@ -397,7 +416,7 @@
       </collision>
       <inertial>
 	      <origin rpy="0 0 ${pi/2}" xyz="0 -0.0035 ${0.0726-((tip_slot_pos-1)*0.015)}"/>
-        <mass value="0.001"/>
+        <mass value="0.040"/>
         <inertia ixx="0.0000064492" ixy="-2.802891E-8" ixz="-2.65457E-9" iyy="0.0000019488" iyz="1.4972E-10" izz="0.0000057675"/>
       </inertial>
     </link>
@@ -429,7 +448,7 @@
       </collision>
       <inertial>
 	      <origin rpy="${pi/2} 0 ${pi}" xyz="0 -0.0295 0"/>
-        <mass value="0.001"/>
+        <mass value="0.010"/>
         <inertia ixx="0.0000013187" ixy="0" ixz="0" iyy="0.0000012511" iyz="2.8731E-7" izz="2.2756E-7"/>
       </inertial>
     </link>
@@ -471,7 +490,7 @@
       </collision>
       <inertial>
 	      <origin rpy="0 0 ${-pi/2}" xyz="0 -0.0185 0"/>
-        <mass value="0.001"/>
+        <mass value="0.029"/>
         <inertia ixx="0.00000151" ixy="-1.23E-12" ixz="0.0000025354" iyy="0.000042463" iyz="-1.23E-12" izz="0.0000433196"/>
       </inertial>
     </link>
@@ -502,7 +521,7 @@
       </collision>
       <inertial>
 	      <origin rpy="0 0 ${-pi/2}" xyz="0 0.0035 0"/>
-        <mass value="0.001"/>
+        <mass value="0.037"/>
         <inertia ixx="0.0000683111" ixy="-1.24623E-9" ixz="0.0000038251" iyy="0.0000668321" iyz="-1.738481E-8" izz="0.0000031831"/>
       </inertial>
     </link>
@@ -533,7 +552,7 @@
       </collision>
       <inertial>
 	      <origin rpy="0 0 ${-pi/2}" xyz="0 0.0035 ${0.0726-((tip_slot_pos-1)*0.015)}"/>
-        <mass value="0.001"/>
+        <mass value="0.040"/>
         <inertia ixx="0.0000064492" ixy="-2.802891E-8" ixz="-2.65457E-9" iyy="0.0000019488" iyz="1.4972E-10" izz="0.0000057675"/>
       </inertial>
     </link>
@@ -554,13 +573,22 @@
 
     <!-- Gripper Tip joint -->
     <joint name="${side}_gripper_tip_joint" type="fixed">
-      <origin rpy="0 0 0" xyz="0 0 ${connector_plate_length+ft_sensor_length+adapter_top_length+adapter_bottom_length+pneumatic_gripper_base_length+finger_total_length}"/>
+      <origin rpy="0 0 0" xyz="0 0 ${(end_of_arm_offset*-1)+connector_plate_length+ft_sensor_length+adapter_top_length+adapter_bottom_length+pneumatic_gripper_base_length+finger_total_length}"/>
       <parent link="${side}_gripper_base"/>
       <child link="${side}_gripper_tip"/>
     </joint>
 
-    <!-- Electric Gripper Tip link -->
+    <!-- Pneumatic Gripper Tip link -->
     <link name="${side}_gripper_tip">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="2e-06"/>
+        <inertia ixx="1.1e-09" ixy="0" ixz="0" iyy="1.1e-09" iyz="0" izz="1.1e-09"/>
+      </inertial>
+    </link>
+
+    <!-- F/T sensor measure point at Tip link -->
+    <link name="${side}_ft_measure_tip">
       <inertial>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <mass value="2e-06"/>
