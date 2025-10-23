@@ -128,20 +128,13 @@
 
 
     <!-- F/T Sensor-Adapter Top Part Joint -->
-    <joint name="${side}_ft_sensor_adapter_top_joint" type="fixed">        <origin xyz="0 0 ${ft_sensor_length}" rpy="0 0 0" />                 <parent link="${side}_ft_sensor_link" />
-      <child  link="${side}_adapter_top" />
-    </joint>
-    
-    <!-- Fixed joint from F/T to tip to measure forces at the end effector -->
-    <joint name="${side}_ft_sensor_tip_joint" type="revolute">
-      <origin xyz="0 0 ${ft_sensor_length+adapter_top_length+adapter_bottom_length+pneumatic_gripper_base_length+finger_total_length}" rpy="0 0 0" />
-      <axis xyz="1 0 0"/>
-      <parent link="${side}_ft_sensor_link"  />
-      <child  link="${side}_ft_measure_tip" />
-      <limit lower="-0.001" upper="0.001" effort="1000" velocity="1000"/>
+    <joint name="${side}_ft_sensor_adapter_top_joint" type="revolute">                                       <origin xyz="0 0 ${ft_sensor_length}" rpy="0 0 0" />                                                <parent link="${side}_ft_sensor_link" />
+         <child  link="${side}_adapter_top" />
+         <axis xyz="1 0 0"/>
+         <limit lower="-0.001" upper="0.001" effort="1000" velocity="1000"/>
     </joint>
 
-    <gazebo reference="${side}_ft_sensor_tip_joint">
+    <gazebo reference="${side}_ft_sensor_adapter_top_joint">
     	<provideFeedback>true</provideFeedback>
     </gazebo>
 
@@ -150,12 +143,11 @@
     <!-- Required parameters -->
     <updateRate>100.0</updateRate>
     <always_on>true</always_on>
-    <visualize>true</visualize>
-    <jointName>${side}_ft_sensor_tip_joint</jointName>
+    <pose>0 0 0 3.1416 0 1.570759</pose>
+    <jointName>${side}_ft_sensor_adapter_top_joint</jointName>
     <topicName>/robot/ft_sensor_topic</topicName>
     <force_torque>
-    	<frame>parent</frame>
-    	<measure_direction>parent_to_child</measure_direction>
+    	<frame>sensor</frame>
     </force_torque>
   </plugin>
 </gazebo>
@@ -422,6 +414,14 @@
       </inertial>
     </link>
 
+    <xacro:if value="${gazebo}">
+      <gazebo reference="${side}_gripper_l_finger_tip">
+        <mu1>10000</mu1>
+        <mu2>10000</mu2>
+      </gazebo>
+    </xacro:if>
+
+
     <!-- Right finger joint -->
     <joint name="${side}_gripper_r_finger_joint" type="prismatic">
       <origin rpy="0 0 0" xyz="0 0 ${pneumatic_gripper_base_length}"/>
@@ -558,6 +558,14 @@
       </inertial>
     </link>
 
+    <xacro:if value="${gazebo}">
+      <gazebo reference="${side}_gripper_r_finger_tip">
+        <mu1>10000</mu1>
+        <mu2>10000</mu2>
+      </gazebo>
+    </xacro:if>
+
+
 <!-- Reference Joints, and links, non-visual, for transform references, and motion planning purposes -->
     <!--To connect this file with the sawyer_base.urdf.xacro a joint must be created between link "right_hand" in the latter file and "pneumatic_gripper_base", this way there is a transform between the robot last link and the End Of Arm Tooling in this file -->
 
@@ -581,21 +589,6 @@
 
     <!-- Pneumatic Gripper Tip link -->
     <link name="${side}_gripper_tip">
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <mass value="2e-06"/>
-        <inertia ixx="1.1e-09" ixy="0" ixz="0" iyy="1.1e-09" iyz="0" izz="1.1e-09"/>
-      </inertial>
-    </link>
-
-    <!-- F/T sensor measure point at Tip link -->
-    <link name="${side}_ft_measure_tip">
-       <visual>
-              <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <box size="0.00001 0.00001 0.00001"/>
-        </geometry>
-      </visual>
       <inertial>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <mass value="2e-06"/>
