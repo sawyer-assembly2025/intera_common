@@ -130,7 +130,7 @@
     <joint name="${side}_ft_sensor_adapter_top_joint" type="revolute">                                       <origin xyz="0 0 ${ft_sensor_length}" rpy="0 0 0" />                                                <parent link="${side}_ft_sensor_link" />
          <child  link="${side}_adapter_top" />
          <axis xyz="1 0 0"/>
-         <limit lower="-0.001" upper="0.001" effort="1000" velocity="1000"/>
+         <limit lower="-0.01" upper="0.01" effort="100" velocity="10"/>
     </joint>
 
     <gazebo reference="${side}_ft_sensor_adapter_top_joint">
